@@ -247,11 +247,16 @@ def build_markdown(repo: str, start: str, end: str, contrib: dict, ages: list[in
     lines = [f"## Custom metrics ({start} to {end})", ""]
 
     lines += [
-        "### New vs. existing contributors",
+        "### New vs. existing contributors (by issue/PR authorship)",
         "",
-        f"- New contributors this period: **{contrib['new_contributor_count']}**",
+        "_Counts below are based on who opened an issue or PR, not who committed "
+        "code — see the Contributors section above for commit-based counts. "
+        "The two won't match: someone can file issues without ever committing, "
+        "or vice versa._",
         "",
-        "| | New contributors | Existing contributors |",
+        f"- New issue/PR authors this period: **{contrib['new_contributor_count']}**",
+        "",
+        "| | New (issue/PR authors) | Existing (issue/PR authors) |",
         "|---|---|---|",
         f"| Issues created | {contrib['issues_new']} | {contrib['issues_existing']} |",
         f"| PRs raised | {contrib['prs_new']} | {contrib['prs_existing']} |",
