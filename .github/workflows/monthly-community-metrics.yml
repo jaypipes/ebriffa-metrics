@@ -15,8 +15,7 @@ jobs:
       issues: write
       pull-requests: read
     env:
-      # Edit this to the repo you want metrics for, e.g. "octocat/hello-world"
-      REPO: <YOUR_ORG>/<YOUR_REPO>
+      REPO: temporalio/temporal-worker-controller
 
     steps:
       - name: Checkout repository
