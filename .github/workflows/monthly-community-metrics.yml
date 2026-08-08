@@ -1,0 +1,99 @@
+name: Monthly community metrics
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "3 2 1 * *" # 02:03 UTC on the 1st of every month
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: community metrics
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+    env:
+      REPO: temporalio/temporal-worker-controller
+
+    steps:
+      - name: Get last month's date range
+        id: dates
+        run: |
+          first_day=$(date -d "last month" +%Y-%m-01)
+          last_day=$(date -d "$first_day +1 month -1 day" +%Y-%m-%d)
+          echo "start_date=$first_day" >> "$GITHUB_OUTPUT"
+          echo "end_date=$last_day" >> "$GITHUB_OUTPUT"
+          echo "range=$first_day..$last_day" >> "$GITHUB_OUTPUT"
+
+      # Step 1: new-contributor identification (contributors.md)
+      - name: Run contributors action
+        uses: github-community-projects/contributors@v2
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ env.REPO }}
+          START_DATE: ${{ steps.dates.outputs.start_date }}
+          END_DATE: ${{ steps.dates.outputs.end_date }}
+          OUTPUT_FILENAME: contributors.md
+
+      # Step 2a: issue response/close time (issue_metrics.md)
+      - name: Run issue-metrics for issues
+        uses: github-community-projects/issue-metrics@v4
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEARCH_QUERY: 'repo:${{ env.REPO }} is:issue created:${{ steps.dates.outputs.range }} -reason:"not planned"'
+          OUTPUT_FILE: issue_metrics.md
+
+      # Step 2b: PR close/merge time (pr_metrics.md)
+      - name: Run issue-metrics for PRs
+        uses: github-community-projects/issue-metrics@v4
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEARCH_QUERY: 'repo:${{ env.REPO }} is:pr created:${{ steps.dates.outputs.range }}'
+          OUTPUT_FILE: pr_metrics.md
+
+      # Step 3: staleness buckets, new-vs-existing counts, issue->PR merge time
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install script dependencies
+        run: pip install requests
+
+      - name: Run custom metrics script
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ env.REPO }}
+          START_DATE: ${{ steps.dates.outputs.start_date }}
+          END_DATE: ${{ steps.dates.outputs.end_date }}
+          STALE_THRESHOLDS: "3,7,14,30"
+          CUSTOM_METRICS_OUTPUT: custom_metrics.md
+        run: python .github/workflows/scripts/custom_metrics.py
+
+      # Step 4: merge everything into one report
+      - name: Combine reports
+        run: |
+          {
+            echo "# Community metrics report"
+            echo ""
+            echo "Window: ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}"
+            echo ""
+            cat contributors.md
+            echo ""
+            cat issue_metrics.md
+            echo ""
+            cat pr_metrics.md
+            echo ""
+            cat custom_metrics.md
+          } > report.md
+
+      # Final step: one issue with everything in it
+      - name: Create issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Monthly community metrics report"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          content-filepath: ./report.md
+          # assignees: <YOUR_GITHUB_HANDLE_HERE>
