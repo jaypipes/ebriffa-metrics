@@ -82,6 +82,10 @@ jobs:
       # Step 4: merge everything into one report
       - name: Combine reports
         run: |
+          sed -i '0,/^# Contributors/s//## Contributors (by commit activity)/' contributors.md
+          sed -i '0,/^# Issue Metrics/s//## Issue metrics — issues/' issue_metrics.md
+          sed -i '0,/^# Issue Metrics/s//## Issue metrics — pull requests/' pr_metrics.md
+
           {
             echo "# Community metrics report"
             echo ""
