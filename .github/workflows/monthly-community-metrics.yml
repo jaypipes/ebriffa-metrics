@@ -15,9 +15,13 @@ jobs:
       issues: write
       pull-requests: read
     env:
-      REPO: temporalio/temporal-worker-controller
+      # Edit this to the repo you want metrics for, e.g. "octocat/hello-world"
+      REPO: <YOUR_ORG>/<YOUR_REPO>
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Get last month's date range
         id: dates
         run: |
