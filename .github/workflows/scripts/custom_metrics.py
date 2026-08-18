@@ -15,7 +15,7 @@ concatenated with the output of the other two actions into one report.
 
 Environment variables:
   GH_TOKEN               GitHub token with read access to the repo. (required)
-  REPO                   "owner/repo".                               (required)
+  REPOSITORY             "owner/repo".                               (required)
   START_DATE             YYYY-MM-DD, inclusive start of the window.  (required)
   END_DATE               YYYY-MM-DD, inclusive end of the window.    (required)
   STALE_THRESHOLDS       Comma-separated day counts. Default "3,7,14,30".
@@ -287,7 +287,7 @@ def build_markdown(repo: str, start: str, end: str, contrib: dict, ages: list[in
 
 def main() -> None:
     token = env("GH_TOKEN", required=True)
-    repo = env("REPO", required=True)
+    repo = env("REPOSITORY", required=True)
     start = env("START_DATE", required=True)
     end = env("END_DATE", required=True)
     thresholds = [int(x) for x in env("STALE_THRESHOLDS", "3,7,14,30").split(",")]
